@@ -82,7 +82,7 @@ namespace RVO
             float2 vector2,
             float2 vector3)
         {
-            var r = math.dot(vector3 - vector1, vector2 - vector1)
+            float r = math.dot(vector3 - vector1, vector2 - vector1)
                 / math.lengthsq(vector2 - vector1);
 
             if (r < 0f)

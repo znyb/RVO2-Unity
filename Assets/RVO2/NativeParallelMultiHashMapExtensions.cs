@@ -67,7 +67,7 @@ namespace RVO
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged, IEquatable<TValue>
         {
-            var remove = 0;
+            int remove = 0;
 
             if (hashMap.TryGetFirstValue(key, out TValue result, out NativeParallelMultiHashMapIterator<TKey> it))
             {
@@ -147,7 +147,7 @@ namespace RVO
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged, IEquatable<TValue>
         {
-            var remove = 0;
+            int remove = 0;
 
             if (hashMap.TryGetFirstValue(key, out TValue result, out NativeParallelMultiHashMapIterator<TKey> it))
             {

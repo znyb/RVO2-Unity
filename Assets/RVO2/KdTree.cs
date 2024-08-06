@@ -96,7 +96,7 @@ namespace RVO
 
         internal int NewObstacleTreeNode()
         {
-            var node = new ObstacleTreeNode
+            ObstacleTreeNode node = new ObstacleTreeNode
             {
                 valid = true,
                 obstacleIndex = 0,
@@ -104,7 +104,7 @@ namespace RVO
                 rightIndex = -1,
             };
 
-            var oldLen = this.obstacleTreeNodes.Length;
+            int oldLen = this.obstacleTreeNodes.Length;
             this.obstacleTreeNodes.Append(node);
             return oldLen;
         }
@@ -216,8 +216,8 @@ namespace RVO
                 in NativeArray<AgentData> agents,
                 ref UnsafeList<AgentData> result)
             {
-                var agentsPtr = (AgentData*)agents.GetUnsafePtr();
-                var agentsLength = agents.Length;
+                AgentData* agentsPtr = (AgentData*)agents.GetUnsafePtr();
+                int agentsLength = agents.Length;
 
                 if (agents.Length > 0)
                 {
@@ -248,12 +248,12 @@ namespace RVO
                 int agentsLength,
                 ref UnsafeList<AgentData.Pair> agentNeighbors)
             {
-                var agentTreePtr = (AgentTreeNode*)this.agentTree.GetUnsafeReadOnlyPtr();
+                AgentTreeNode* agentTreePtr = (AgentTreeNode*)this.agentTree.GetUnsafeReadOnlyPtr();
                 AgentTreeNode* agentTreeNode = agentTreePtr + node;
 
                 if (agentTreeNode->end - agentTreeNode->begin <= MaxLeafSize)
                 {
-                    for (var i = agentTreeNode->begin; i < agentTreeNode->end; ++i)
+                    for (int i = agentTreeNode->begin; i < agentTreeNode->end; ++i)
                     {
                         agent->InsertAgentNeighbor(
                             this.agentIds[i],
@@ -265,14 +265,14 @@ namespace RVO
                 }
                 else
                 {
-                    var leftChild = this.agentTree[agentTreeNode->left];
-                    var rightChild = this.agentTree[agentTreeNode->right];
+                    AgentTreeNode leftChild = this.agentTree[agentTreeNode->left];
+                    AgentTreeNode rightChild = this.agentTree[agentTreeNode->right];
 
-                    var distSqLeft = RVOMath.Square(math.max(0f, leftChild.minX - agent->position.x))
+                    float distSqLeft = RVOMath.Square(math.max(0f, leftChild.minX - agent->position.x))
                         + RVOMath.Square(math.max(0f, agent->position.x - leftChild.maxX))
                         + RVOMath.Square(math.max(0f, leftChild.minY - agent->position.y))
                         + RVOMath.Square(math.max(0f, agent->position.y - leftChild.maxY));
-                    var distSqRight = RVOMath.Square(math.max(0f, rightChild.minX - agent->position.x))
+                    float distSqRight = RVOMath.Square(math.max(0f, rightChild.minX - agent->position.x))
                         + RVOMath.Square(math.max(0f, agent->position.x - rightChild.maxX))
                         + RVOMath.Square(math.max(0f, rightChild.minY - agent->position.y))
                         + RVOMath.Square(math.max(0f, agent->position.y - rightChild.maxY));
@@ -345,7 +345,7 @@ namespace RVO
                 int obstaclesLength,
                 ref UnsafeList<AgentData.Pair> obstacleNeighbors)
             {
-                var obstacleTreeNodesPtr = (ObstacleTreeNode*)this.obstacleTreeNodes.GetUnsafeReadOnlyPtr();
+                ObstacleTreeNode* obstacleTreeNodesPtr = (ObstacleTreeNode*)this.obstacleTreeNodes.GetUnsafeReadOnlyPtr();
 
                 ObstacleTreeNode* node = null;
                 if (nodeIndex >= 0 && nodeIndex < this.obstacleTreeNodes.Length)
@@ -358,12 +358,12 @@ namespace RVO
                     return;
                 }
 
-                var obstacle1Index = node->obstacleIndex;
+                int obstacle1Index = node->obstacleIndex;
                 Obstacle* obstacle1 = obstacles + obstacle1Index;
-                var obstacle2Index = obstacle1->nextIndex;
+                int obstacle2Index = obstacle1->nextIndex;
                 Obstacle* obstacle2 = obstacles + obstacle2Index;
 
-                var agentLeftOfLine = RVOMath.LeftOf(obstacle1->point, obstacle2->point, agent->position);
+                float agentLeftOfLine = RVOMath.LeftOf(obstacle1->point, obstacle2->point, agent->position);
 
                 this.QueryObstacleTreeRecursive(
                     agent,
@@ -373,7 +373,7 @@ namespace RVO
                     obstaclesLength,
                     ref obstacleNeighbors);
 
-                var distSqLine = RVOMath.Square(agentLeftOfLine) / math.lengthsq(obstacle2->point - obstacle1->point);
+                float distSqLine = RVOMath.Square(agentLeftOfLine) / math.lengthsq(obstacle2->point - obstacle1->point);
 
                 if (distSqLine < rangeSq)
                 {
@@ -418,7 +418,7 @@ namespace RVO
                 Obstacle* obstacles,
                 int obstaclesLength)
             {
-                var obstacleTreeNodesPtr = (ObstacleTreeNode*)this.obstacleTreeNodes.GetUnsafeReadOnlyPtr();
+                ObstacleTreeNode* obstacleTreeNodesPtr = (ObstacleTreeNode*)this.obstacleTreeNodes.GetUnsafeReadOnlyPtr();
 
                 ObstacleTreeNode* node = null;
                 if (nodeIndex >= 0 && nodeIndex < this.obstacleTreeNodes.Length)
@@ -431,15 +431,15 @@ namespace RVO
                     return true;
                 }
 
-                var obstacle1Index = node->obstacleIndex;
+                int obstacle1Index = node->obstacleIndex;
                 Obstacle* obstacle1 = obstacles + obstacle1Index;
-                var obstacle2Index = obstacle1->nextIndex;
+                int obstacle2Index = obstacle1->nextIndex;
                 Obstacle* obstacle2 = obstacles + obstacle2Index;
 
-                var q1LeftOfI = RVOMath.LeftOf(obstacle1->point, obstacle2->point, q1);
-                var q2LeftOfI = RVOMath.LeftOf(obstacle1->point, obstacle2->point, q2);
-                var invLengthI = 1f / math.lengthsq(obstacle2->point - obstacle1->point);
-                var radiusSq = RVOMath.Square(radius);
+                float q1LeftOfI = RVOMath.LeftOf(obstacle1->point, obstacle2->point, q1);
+                float q2LeftOfI = RVOMath.LeftOf(obstacle1->point, obstacle2->point, q2);
+                float invLengthI = 1f / math.lengthsq(obstacle2->point - obstacle1->point);
+                float radiusSq = RVOMath.Square(radius);
 
                 if (q1LeftOfI >= 0f && q2LeftOfI >= 0f)
                 {
@@ -462,9 +462,9 @@ namespace RVO
                         && this.QueryVisibilityRecursive(q1, q2, radius, node->rightIndex, obstacles, obstaclesLength);
                 }
 
-                var point1LeftOfQ = RVOMath.LeftOf(q1, q2, obstacle1->point);
-                var point2LeftOfQ = RVOMath.LeftOf(q1, q2, obstacle2->point);
-                var invLengthQ = 1f / math.lengthsq(q2 - q1);
+                float point1LeftOfQ = RVOMath.LeftOf(q1, q2, obstacle1->point);
+                float point2LeftOfQ = RVOMath.LeftOf(q1, q2, obstacle2->point);
+                float invLengthQ = 1f / math.lengthsq(q2 - q1);
 
                 return point1LeftOfQ * point2LeftOfQ >= 0f
                     && RVOMath.Square(point1LeftOfQ) * invLengthQ > radiusSq
@@ -481,7 +481,7 @@ namespace RVO
                 in int agentsLength,
                 ref UnsafeList<AgentData> result)
             {
-                var agentTreePtr = (AgentTreeNode*)this.agentTree.GetUnsafeReadOnlyPtr();
+                AgentTreeNode* agentTreePtr = (AgentTreeNode*)this.agentTree.GetUnsafeReadOnlyPtr();
                 AgentTreeNode* node = agentTreePtr + nodeIndex;
 
                 // Check if the position is within the range of the node's bounding box
@@ -493,15 +493,15 @@ namespace RVO
                     return;
                 }
 
-                var rangeSq = RVOMath.Square(range);
+                float rangeSq = RVOMath.Square(range);
 
                 // Check if the node is a leaf node
                 if (node->end - node->begin <= MaxLeafSize)
                 {
                     // Iterate over the agentIds in the leaf node
-                    for (var i = node->begin; i < node->end; ++i)
+                    for (int i = node->begin; i < node->end; ++i)
                     {
-                        var agentIndex = this.agentIds[i];
+                        int agentIndex = this.agentIds[i];
                         float2 agentPosition = (agents + agentIndex)->position;
 
                         // Check if the agent is within the specified range

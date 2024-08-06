@@ -69,11 +69,11 @@ namespace RVO
                 return;
             }
 
-            var newArray = new NativeArray<T>(newSize, allocator);
+            NativeArray<T> newArray = new NativeArray<T>(newSize, allocator);
 
             if (array.IsCreated)
             {
-                var min = math.min(array.Length, newSize);
+                int min = math.min(array.Length, newSize);
                 NativeArray<T>.Copy(array, newArray, min);
                 array.Dispose();
             }

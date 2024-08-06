@@ -85,7 +85,7 @@ namespace RVO
             ref UnsafeList<Pair> agentNeighbors,
             ref UnsafeList<Pair> obstacleNeighbors)
         {
-            var rangeSq = RVOMath.Square((this.timeHorizonObst * this.maxSpeed) + this.radius);
+            float rangeSq = RVOMath.Square((this.timeHorizonObst * this.maxSpeed) + this.radius);
             fixed (AgentData* thisPtr = &this)
             {
                 kdTree.ComputeObstacleNeighbors(
@@ -123,16 +123,16 @@ namespace RVO
             ref UnsafeList<Pair> agentNeighbors,
             ref UnsafeList<Pair> obstacleNeighbors)
         {
-            var orcaLines = new UnsafeList<Line>(8, Allocator.Temp);
+            UnsafeList<Line> orcaLines = new UnsafeList<Line>(8, Allocator.Temp);
 
-            var invTimeHorizonObst = 1f / this.timeHorizonObst;
+            float invTimeHorizonObst = 1f / this.timeHorizonObst;
 
             // Create obstacle ORCA lines.
-            for (var i = 0; i < obstacleNeighbors.Length; ++i)
+            for (int i = 0; i < obstacleNeighbors.Length; ++i)
             {
-                var obstacle1Index = obstacleNeighbors[i].index;
+                int obstacle1Index = obstacleNeighbors[i].index;
                 Obstacle* obstacle1 = obstacles + obstacle1Index;
-                var obstacle2Index = obstacle1->nextIndex;
+                int obstacle2Index = obstacle1->nextIndex;
                 Obstacle* obstacle2 = obstacles + obstacle2Index;
 
                 float2 relativePosition1 = obstacle1->point - this.position;
@@ -140,13 +140,13 @@ namespace RVO
 
                 // Check if velocity obstacle of obstacle is already taken care
                 // of by previously constructed obstacle ORCA lines.
-                var alreadyCovered = false;
+                bool alreadyCovered = false;
 
-                var relativeMove1 = invTimeHorizonObst * relativePosition1;
-                var relativeMove2 = invTimeHorizonObst * relativePosition2;
-                var dist = invTimeHorizonObst * this.radius;
+                float2 relativeMove1 = invTimeHorizonObst * relativePosition1;
+                float2 relativeMove2 = invTimeHorizonObst * relativePosition2;
+                float dist = invTimeHorizonObst * this.radius;
 
-                for (var j = 0; j < orcaLines.Length; ++j)
+                for (int j = 0; j < orcaLines.Length; ++j)
                 {
                     Line lineJ = orcaLines[j];
                     if (RVOMath.Det(relativeMove1 - lineJ.point, lineJ.direction) - dist >= -RVOMath.RVO_EPSILON &&
@@ -164,21 +164,21 @@ namespace RVO
                 }
 
                 // Not yet covered. Check for collisions.
-                var distSq1 = math.lengthsq(relativePosition1);
-                var distSq2 = math.lengthsq(relativePosition2);
+                float distSq1 = math.lengthsq(relativePosition1);
+                float distSq2 = math.lengthsq(relativePosition2);
 
-                var radiusSq = RVOMath.Square(this.radius);
+                float radiusSq = RVOMath.Square(this.radius);
 
                 float2 obstacleVector = obstacle2->point - obstacle1->point;
-                var s = math.dot(-relativePosition1, obstacleVector) / math.lengthsq(obstacleVector);
-                var distSqLine = math.lengthsq(-relativePosition1 - (s * obstacleVector));
+                float s = math.dot(-relativePosition1, obstacleVector) / math.lengthsq(obstacleVector);
+                float distSqLine = math.lengthsq(-relativePosition1 - (s * obstacleVector));
 
                 if (s < 0f && distSq1 <= radiusSq)
                 {
                     // Collision with left vertex. Ignore if non-convex.
                     if (obstacle1->convex)
                     {
-                        var line = new Line(
+                        Line line = new Line(
                             new float2(0f, 0f),
                             math.normalize(new float2(-relativePosition1.y, relativePosition1.x)));
                         orcaLines.Add(line);
@@ -192,7 +192,7 @@ namespace RVO
                     // it will be taken care of by neighboring obstacle.
                     if (obstacle2->convex && RVOMath.Det(relativePosition2, obstacle2->direction) >= 0f)
                     {
-                        var line = new Line(
+                        Line line = new Line(
                             new float2(0f, 0f),
                             math.normalize(new float2(-relativePosition2.y, relativePosition2.x)));
                         orcaLines.Add(line);
@@ -203,7 +203,7 @@ namespace RVO
                 else if (s >= 0f && s <= 1f && distSqLine <= radiusSq)
                 {
                     // Collision with obstacle segment.
-                    var line = new Line(
+                    Line line = new Line(
                         new float2(0f, 0f),
                         -obstacle1->direction);
                     orcaLines.Add(line);
@@ -228,7 +228,7 @@ namespace RVO
 
                     obstacle2 = obstacle1;
 
-                    var leg1 = math.sqrt(distSq1 - radiusSq);
+                    float leg1 = math.sqrt(distSq1 - radiusSq);
 
                     leftLegDirection = new float2(
                         (relativePosition1.x * leg1) - (relativePosition1.y * this.radius),
@@ -251,7 +251,7 @@ namespace RVO
 
                     obstacle1 = obstacle2;
 
-                    var leg2 = math.sqrt(distSq2 - radiusSq);
+                    float leg2 = math.sqrt(distSq2 - radiusSq);
                     leftLegDirection = new float2(
                         (relativePosition2.x * leg2) - (relativePosition2.y * this.radius),
                         (relativePosition2.x * this.radius) + (relativePosition2.y * leg2))
@@ -266,7 +266,7 @@ namespace RVO
                     // Usual situation.
                     if (obstacle1->convex)
                     {
-                        var leg1 = math.sqrt(distSq1 - radiusSq);
+                        float leg1 = math.sqrt(distSq1 - radiusSq);
                         leftLegDirection = new float2(
                             (relativePosition1.x * leg1) - (relativePosition1.y * this.radius),
                             (relativePosition1.x * this.radius) + (relativePosition1.y * leg1))
@@ -280,7 +280,7 @@ namespace RVO
 
                     if (obstacle2->convex)
                     {
-                        var leg2 = math.sqrt(distSq2 - radiusSq);
+                        float leg2 = math.sqrt(distSq2 - radiusSq);
                         rightLegDirection = new float2(
                             (relativePosition2.x * leg2) + (relativePosition2.y * this.radius),
                             (-relativePosition2.x * this.radius) + (relativePosition2.y * leg2))
@@ -296,11 +296,11 @@ namespace RVO
                 // Legs can never point into neighboring edge when convex
                 // vertex, take cutoff-line of neighboring edge instead. If
                 // velocity projected on "foreign" leg, no constraint is added.
-                var leftNeighborIndex = obstacle1->previousIndex;
+                int leftNeighborIndex = obstacle1->previousIndex;
                 Obstacle* leftNeighbor = obstacles + leftNeighborIndex;
 
-                var isLeftLegForeign = false;
-                var isRightLegForeign = false;
+                bool isLeftLegForeign = false;
+                bool isRightLegForeign = false;
 
                 if (obstacle1->convex && RVOMath.Det(leftLegDirection, -leftNeighbor->direction) >= 0f)
                 {
@@ -324,18 +324,18 @@ namespace RVO
                 // Project current velocity on velocity obstacle.
 
                 // Check if current velocity is projected on cutoff circles.
-                var same = obstacle1->id == obstacle2->id;
-                var t = same ? 0.5f : math.dot(this.velocity - leftCutOff, cutOffVector)
+                bool same = obstacle1->id == obstacle2->id;
+                float t = same ? 0.5f : math.dot(this.velocity - leftCutOff, cutOffVector)
                     / math.lengthsq(cutOffVector);
-                var tLeft = math.dot(this.velocity - leftCutOff, leftLegDirection);
-                var tRight = math.dot(this.velocity - rightCutOff, rightLegDirection);
+                float tLeft = math.dot(this.velocity - leftCutOff, leftLegDirection);
+                float tRight = math.dot(this.velocity - rightCutOff, rightLegDirection);
 
                 if ((t < 0f && tLeft < 0f) || (same && tLeft < 0f && tRight < 0f))
                 {
                     // Project on left cut-off circle.
                     float2 unitW = math.normalize(this.velocity - leftCutOff);
 
-                    var line = new Line(
+                    Line line = new Line(
                         leftCutOff + (dist * unitW),
                         new float2(unitW.y, -unitW.x));
                     orcaLines.Add(line);
@@ -347,7 +347,7 @@ namespace RVO
                     // Project on right cut-off circle.
                     float2 unitW = math.normalize(this.velocity - rightCutOff);
 
-                    var line = new Line(
+                    Line line = new Line(
                         rightCutOff + (dist * unitW),
                         new float2(unitW.y, -unitW.x));
                     orcaLines.Add(line);
@@ -357,19 +357,19 @@ namespace RVO
 
                 // Project on left leg, right leg, or cut-off line, whichever is
                 // closest to velocity.
-                var distSqCutoff = (t < 0f || t > 1f || obstacle1->id == obstacle2->id)
+                float distSqCutoff = (t < 0f || t > 1f || obstacle1->id == obstacle2->id)
                     ? float.PositiveInfinity
                     : math.lengthsq(this.velocity - (leftCutOff + (t * cutOffVector)));
-                var distSqLeft = tLeft < 0f ? float.PositiveInfinity
+                float distSqLeft = tLeft < 0f ? float.PositiveInfinity
                     : math.lengthsq(this.velocity - (leftCutOff + (tLeft * leftLegDirection)));
-                var distSqRight = tRight < 0f ? float.PositiveInfinity
+                float distSqRight = tRight < 0f ? float.PositiveInfinity
                     : math.lengthsq(this.velocity - (rightCutOff + (tRight * rightLegDirection)));
 
                 if (distSqCutoff <= distSqLeft && distSqCutoff <= distSqRight)
                 {
                     // Project on cut-off line.
-                    var direction = -obstacle1->direction;
-                    var line = new Line(
+                    float2 direction = -obstacle1->direction;
+                    Line line = new Line(
                         leftCutOff + (dist * new float2(-direction.y, direction.x)),
                         direction);
                     orcaLines.Add(line);
@@ -385,8 +385,8 @@ namespace RVO
                         continue;
                     }
 
-                    var direction = leftLegDirection;
-                    var line = new Line(
+                    float2 direction = leftLegDirection;
+                    Line line = new Line(
                         leftCutOff + (dist * new float2(-direction.y, direction.x)),
                         direction);
                     orcaLines.Add(line);
@@ -400,28 +400,28 @@ namespace RVO
                     continue;
                 }
 
-                var direction0 = -rightLegDirection;
-                var line0 = new Line(
+                float2 direction0 = -rightLegDirection;
+                Line line0 = new Line(
                     rightCutOff + (dist * new float2(-direction0.y, direction0.x)),
                     direction0);
                 orcaLines.Add(line0);
             }
 
-            var numObstLines = orcaLines.Length;
+            int numObstLines = orcaLines.Length;
 
-            var invTimeHorizon = 1f / this.timeHorizon;
+            float invTimeHorizon = 1f / this.timeHorizon;
 
             // Create agent ORCA lines.
-            for (var i = 0; i < agentNeighbors.Length; ++i)
+            for (int i = 0; i < agentNeighbors.Length; ++i)
             {
-                var otherIndex = agentNeighbors[i].index;
+                int otherIndex = agentNeighbors[i].index;
                 AgentData* other = agents + otherIndex;
 
                 float2 relativePosition = other->position - this.position;
                 float2 relativeVelocity = this.velocity - other->velocity;
-                var distSq = math.lengthsq(relativePosition);
-                var combinedRadius = this.radius + other->radius;
-                var combinedRadiusSq = RVOMath.Square(combinedRadius);
+                float distSq = math.lengthsq(relativePosition);
+                float combinedRadius = this.radius + other->radius;
+                float combinedRadiusSq = RVOMath.Square(combinedRadius);
 
                 float2 point;
                 float2 direction;
@@ -433,13 +433,13 @@ namespace RVO
                     float2 w = relativeVelocity - (invTimeHorizon * relativePosition);
 
                     // Vector from cutoff center to relative velocity.
-                    var wLengthSq = math.lengthsq(w);
-                    var dotProduct1 = math.dot(w, relativePosition);
+                    float wLengthSq = math.lengthsq(w);
+                    float dotProduct1 = math.dot(w, relativePosition);
 
                     if (dotProduct1 < 0f && RVOMath.Square(dotProduct1) > combinedRadiusSq * wLengthSq)
                     {
                         // Project on cut-off circle.
-                        var wLength = math.sqrt(wLengthSq);
+                        float wLength = math.sqrt(wLengthSq);
                         float2 unitW = w / wLength;
 
                         direction = new float2(unitW.y, -unitW.x);
@@ -448,7 +448,7 @@ namespace RVO
                     else
                     {
                         // Project on legs.
-                        var leg = math.sqrt(distSq - combinedRadiusSq);
+                        float leg = math.sqrt(distSq - combinedRadiusSq);
 
                         if (RVOMath.Det(relativePosition, w) > 0f)
                         {
@@ -467,19 +467,19 @@ namespace RVO
                                 / distSq;
                         }
 
-                        var dotProduct2 = math.dot(relativeVelocity, direction);
+                        float dotProduct2 = math.dot(relativeVelocity, direction);
                         u = (dotProduct2 * direction) - relativeVelocity;
                     }
                 }
                 else
                 {
                     // Collision. Project on cut-off circle of time timeStep.
-                    var invTimeStep = 1f / timeStep;
+                    float invTimeStep = 1f / timeStep;
 
                     // Vector from cutoff center to relative velocity.
                     float2 w = relativeVelocity - (invTimeStep * relativePosition);
 
-                    var wLength = math.length(w);
+                    float wLength = math.length(w);
                     float2 unitW = w / wLength;
 
                     direction = new float2(unitW.y, -unitW.x);
@@ -487,11 +487,11 @@ namespace RVO
                 }
 
                 point = this.velocity + (getAgentWeight(other->weight) * u);
-                var line = new Line(point, direction);
+                Line line = new Line(point, direction);
                 orcaLines.Add(line);
             }
 
-            var lineFail = this.LinearProgram2(
+            int lineFail = this.LinearProgram2(
                 orcaLines.Ptr,
                 orcaLines.Length,
                 this.maxSpeed,
@@ -539,7 +539,7 @@ namespace RVO
                 return;
             }
 
-            var distSq = math.lengthsq(this.position - agent->position);
+            float distSq = math.lengthsq(this.position - agent->position);
 
             if (distSq < rangeSq)
             {
@@ -548,7 +548,7 @@ namespace RVO
                     agentNeighbors.Add(new Pair(distSq, agentIndex));
                 }
 
-                var i = agentNeighbors.Length - 1;
+                int i = agentNeighbors.Length - 1;
 
                 while (i != 0 && distSq < agentNeighbors[i - 1].dist)
                 {
@@ -581,16 +581,16 @@ namespace RVO
             ref UnsafeList<Pair> obstacleNeighbors)
         {
             Obstacle* obstacle = obstacles + obstacleIndex;
-            var nextObstacleIndex = obstacle->nextIndex;
+            int nextObstacleIndex = obstacle->nextIndex;
             Obstacle* nextObstacle = obstacles + nextObstacleIndex;
 
-            var distSq = RVOMath.DistSqPointLineSegment(obstacle->point, nextObstacle->point, this.position);
+            float distSq = RVOMath.DistSqPointLineSegment(obstacle->point, nextObstacle->point, this.position);
 
             if (distSq < rangeSq)
             {
                 obstacleNeighbors.Add(new Pair(distSq, obstacleIndex));
 
-                var i = obstacleNeighbors.Length - 1;
+                int i = obstacleNeighbors.Length - 1;
 
                 while (i != 0 && distSq < obstacleNeighbors[i - 1].dist)
                 {
@@ -633,8 +633,8 @@ namespace RVO
             ref float2 result)
         {
             Line* lineNoPtr = lines + lineNo;
-            var dotProduct = math.dot(lineNoPtr->point, lineNoPtr->direction);
-            var discriminant = RVOMath.Square(dotProduct) + RVOMath.Square(radius) - math.lengthsq(lineNoPtr->point);
+            float dotProduct = math.dot(lineNoPtr->point, lineNoPtr->direction);
+            float discriminant = RVOMath.Square(dotProduct) + RVOMath.Square(radius) - math.lengthsq(lineNoPtr->point);
 
             if (discriminant < 0f)
             {
@@ -642,15 +642,15 @@ namespace RVO
                 return false;
             }
 
-            var sqrtDiscriminant = math.sqrt(discriminant);
-            var tLeft = -dotProduct - sqrtDiscriminant;
-            var tRight = -dotProduct + sqrtDiscriminant;
+            float sqrtDiscriminant = math.sqrt(discriminant);
+            float tLeft = -dotProduct - sqrtDiscriminant;
+            float tRight = -dotProduct + sqrtDiscriminant;
 
-            for (var i = 0; i < lineNo; ++i)
+            for (int i = 0; i < lineNo; ++i)
             {
                 Line* lineI = lines + i;
-                var denominator = RVOMath.Det(lineNoPtr->direction, lineI->direction);
-                var numerator = RVOMath.Det(lineI->direction, lineNoPtr->point - lineI->point);
+                float denominator = RVOMath.Det(lineNoPtr->direction, lineI->direction);
+                float numerator = RVOMath.Det(lineI->direction, lineNoPtr->point - lineI->point);
 
                 if (math.abs(denominator) <= RVOMath.RVO_EPSILON)
                 {
@@ -663,7 +663,7 @@ namespace RVO
                     continue;
                 }
 
-                var t = numerator / denominator;
+                float t = numerator / denominator;
 
                 if (denominator >= 0f)
                 {
@@ -699,7 +699,7 @@ namespace RVO
             else
             {
                 // Optimize closest point.
-                var t = math.dot(lineNoPtr->direction, optVelocity - lineNoPtr->point);
+                float t = math.dot(lineNoPtr->direction, optVelocity - lineNoPtr->point);
 
                 if (t < tLeft)
                 {
@@ -753,7 +753,7 @@ namespace RVO
                 result = optVelocity;
             }
 
-            for (var i = 0; i < linesLength; ++i)
+            for (int i = 0; i < linesLength; ++i)
             {
                 Line* lineI = lines + i;
                 if (RVOMath.Det(lineI->direction, lineI->point - result) > 0f)
@@ -797,9 +797,9 @@ namespace RVO
             float radius,
             ref float2 result)
         {
-            var distance = 0f;
+            float distance = 0f;
 
-            for (var i = beginLine; i < linesLength; ++i)
+            for (int i = beginLine; i < linesLength; ++i)
             {
                 Line* lineI = lines + i;
                 if (RVOMath.Det(lineI->direction, lineI->point - result) <= distance)
@@ -808,19 +808,19 @@ namespace RVO
                 }
 
                 // Result does not satisfy constraint of line i.
-                var projLines = new UnsafeList<Line>(numObstLines, Allocator.Temp);
-                for (var ii = 0; ii < numObstLines; ++ii)
+                UnsafeList<Line> projLines = new UnsafeList<Line>(numObstLines, Allocator.Temp);
+                for (int ii = 0; ii < numObstLines; ++ii)
                 {
                     projLines.Add(lines[ii]);
                 }
 
-                for (var j = numObstLines; j < i; ++j)
+                for (int j = numObstLines; j < i; ++j)
                 {
                     Line* lineJ = lines + j;
                     float2 point;
                     float2 direction;
 
-                    var determinant = RVOMath.Det(lineI->direction, lineJ->direction);
+                    float determinant = RVOMath.Det(lineI->direction, lineJ->direction);
 
                     if (math.abs(determinant) <= RVOMath.RVO_EPSILON)
                     {
@@ -843,7 +843,7 @@ namespace RVO
                     }
 
                     direction = math.normalize(lineJ->direction - lineI->direction);
-                    var line = new Line(point, direction);
+                    Line line = new Line(point, direction);
                     projLines.Add(line);
                 }
 
