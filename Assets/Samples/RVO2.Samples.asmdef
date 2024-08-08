@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "Unity.Mathematics",
-        "RVO2"
+        "RVO2",
+        "FixedPoint"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

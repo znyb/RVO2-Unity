@@ -42,7 +42,11 @@
 
 namespace RVO
 {
+#if RVO_FIXEDPOINT
+    using float2 = Deterministic.FixedPoint.fp2;
+#else
     using Unity.Mathematics;
+#endif
 
     /// <summary>
     /// Defines static obstacles in the simulation.

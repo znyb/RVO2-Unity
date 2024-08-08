@@ -2,11 +2,11 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Deterministic.FixedPoint {
-    [StructLayout(LayoutKind.Explicit, Size = SIZE)]
+    //[StructLayout(LayoutKind.Explicit, Size = SIZE)]
     public struct Random {
         public const int SIZE = 4;
 
-        [FieldOffset(0)]
+        //[FieldOffset(0)]
         public uint state;
         
         /// <summary>

@@ -49,8 +49,16 @@ namespace RVO
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
-    using Unity.Mathematics;
     using UnityEngine;
+
+#if RVO_FIXEDPOINT
+    using fp = Deterministic.FixedPoint.fp;
+    using float2 = Deterministic.FixedPoint.fp2;
+    using math = Deterministic.FixedPoint.fixmath;
+#else
+    using Unity.Mathematics;
+    using fp = System.Single;
+#endif
 
     /// <summary>
     /// Defines the simulation.
@@ -60,7 +68,7 @@ namespace RVO
         private NativeList<AgentData> agentDatas;
         private NativeList<Obstacle> obstacles;
         private KdTree kdTree;
-        private float timeStep;
+        private fp timeStep;
 
         private List<Agent> agents = new List<Agent>();
         private NativeParallelHashMap<int, int> agentIndexLookup;
@@ -73,7 +81,7 @@ namespace RVO
 
         private JobHandle jobHandle;
 
-        private float globalTime;
+        private fp globalTime;
         private bool disposedValue;
 
         private bool agentTreeDirty;
@@ -181,7 +189,7 @@ namespace RVO
                         obstacle->convex = RVOMath.LeftOf(
                             vertices[isFirst ? vertices.Count - 1 : i - 1],
                             vertices[i],
-                            vertices[isLast ? 0 : i + 1]) >= 0f;
+                            vertices[isLast ? 0 : i + 1]) >= RVOMath.Zero;
                     }
                 }
             }
@@ -353,8 +361,8 @@ namespace RVO
 
             this.agents.Clear();
 
-            this.globalTime = 0f;
-            this.timeStep = 0.1f;
+            this.globalTime = RVOMath.Zero;
+            this.timeStep = RVOMath.One / 10;
 
             this.SetNumWorkers(0);
 
@@ -456,7 +464,7 @@ namespace RVO
         /// </summary>
         /// <returns>The present global time of the simulation (zero initially).
         /// </returns>
-        public float GetGlobalTime()
+        public fp GetGlobalTime()
         {
             return this.globalTime;
         }
@@ -544,7 +552,7 @@ namespace RVO
         /// </summary>
         ///
         /// <returns>The present time step of the simulation.</returns>
-        public float GetTimeStep()
+        public fp GetTimeStep()
         {
             return this.timeStep;
         }
@@ -561,7 +569,7 @@ namespace RVO
         /// <returns>A boolean specifying whether the two points are mutually
         /// visible. Returns true when the obstacles have not been processed.
         /// </returns>
-        public bool QueryVisibility(float2 point1, float2 point2, float radius)
+        public bool QueryVisibility(float2 point1, float2 point2, fp radius)
         {
             this.EnsureCompleted();
 
@@ -611,12 +619,12 @@ namespace RVO
         /// <param name="velocity">The default initial two-dimensional linear
         /// velocity of a new agent.</param>
         public void SetAgentDefaults(
-            float neighborDist,
+            fp neighborDist,
             int maxNeighbors,
-            float timeHorizon,
-            float timeHorizonObst,
-            float radius,
-            float maxSpeed,
+            fp timeHorizon,
+            fp timeHorizonObst,
+            fp radius,
+            fp maxSpeed,
             float2 velocity)
         {
             this.defaultAgent = new Agent
@@ -635,7 +643,7 @@ namespace RVO
         /// Sets the global time of the simulation.
         /// </summary>
         /// <param name="globalTime">The global time of the simulation.</param>
-        public void SetGlobalTime(float globalTime)
+        public void SetGlobalTime(fp globalTime)
         {
             this.globalTime = globalTime;
         }
@@ -659,7 +667,7 @@ namespace RVO
         /// </summary>
         /// <param name="timeStep">The time step of the simulation.
         /// Must be positive.</param>
-        public void SetTimeStep(float timeStep)
+        public void SetTimeStep(fp timeStep)
         {
             this.timeStep = timeStep;
         }
@@ -671,7 +679,7 @@ namespace RVO
         /// <param name="radius">The radius of the query.</param>
         /// <param name="result">The list to store the agentIds found.</param>
         /// <returns>The number of agentIds found within the specified radius.</returns>
-        public int QueryAgent(float2 point, float radius, List<int> result)
+        public int QueryAgent(float2 point, fp radius, List<int> result)
         {
             if (result == null)
             {
@@ -754,7 +762,7 @@ namespace RVO
             // No leaf node.
             bool isVertical = node->maxX - node->minX
                              > node->maxY - node->minY;
-            float splitValue = 0.5f * (isVertical
+            fp splitValue = RVOMath.Half * (isVertical
                                  ? node->maxX + node->minX
                                  : node->maxY + node->minY);
 
@@ -929,12 +937,12 @@ namespace RVO
         /// <returns>The number of the agent.</returns>
         public Agent AddAgent(
             float2 position,
-            float neighborDist,
+            fp neighborDist,
             int maxNeighbors,
-            float timeHorizon,
-            float timeHorizonObst,
-            float radius,
-            float maxSpeed,
+            fp timeHorizon,
+            fp timeHorizonObst,
+            fp radius,
+            fp maxSpeed,
             float2 velocity)
         {
             int newIndex = this.agentDatas.Length;
@@ -949,7 +957,7 @@ namespace RVO
             agentData.timeHorizon = timeHorizon;
             agentData.timeHorizonObst = timeHorizonObst;
             agentData.velocity = velocity;
-            agentData.weight = 0.5f;
+            agentData.weight = RVOMath.Half;
 
             Agent agent = new Agent(agentData);
 
@@ -1036,8 +1044,8 @@ namespace RVO
                     int obstacleJ2Index = obstacleJ1->nextIndex;
                     Obstacle* obstacleJ2 = obstaclesPtr + obstacleJ2Index;
 
-                    float j1LeftOfI = RVOMath.LeftOf(obstacleI1->point, obstacleI2->point, obstacleJ1->point);
-                    float j2LeftOfI = RVOMath.LeftOf(obstacleI1->point, obstacleI2->point, obstacleJ2->point);
+                    fp j1LeftOfI = RVOMath.LeftOf(obstacleI1->point, obstacleI2->point, obstacleJ1->point);
+                    fp j2LeftOfI = RVOMath.LeftOf(obstacleI1->point, obstacleI2->point, obstacleJ2->point);
 
                     if (j1LeftOfI >= -RVOMath.RVO_EPSILON && j2LeftOfI >= -RVOMath.RVO_EPSILON)
                     {
@@ -1049,8 +1057,39 @@ namespace RVO
                     }
                     else
                     {
-                        ++leftSize;
-                        ++rightSize;
+                        float2 dI2I1 = obstacleI2->point - obstacleI1->point;
+                        fp t = RVOMath.Det(dI2I1, obstacleJ1->point - obstacleI1->point)
+                            / RVOMath.Det(dI2I1, obstacleJ1->point - obstacleJ2->point);
+                        float2 splitPoint = obstacleJ1->point + (t * (obstacleJ2->point - obstacleJ1->point));
+                        bool closeJ1 = math.distancesq(splitPoint, obstacleJ1->point) <= RVOMath.RVO_EPSILON;
+                        bool closeJ2 = math.distancesq(splitPoint, obstacleJ2->point) <= RVOMath.RVO_EPSILON;
+                        if (closeJ1)
+                        {
+                            if (j2LeftOfI > RVOMath.Zero)
+                            {
+                                ++leftSize;
+                            }
+                            else
+                            {
+                                ++rightSize;
+                            }
+                        }
+                        else if(closeJ2)
+                        {
+                            if (j1LeftOfI > RVOMath.Zero)
+                            {
+                                ++leftSize;
+                            }
+                            else
+                            {
+                                ++rightSize;
+                            }
+                        }
+                        else
+                        {
+                            ++rightSize;
+                            ++leftSize;
+                        }
                     }
 
                     float2 bound1 = new float2(math.max(leftSize, rightSize), math.min(leftSize, rightSize));
@@ -1114,8 +1153,8 @@ namespace RVO
                     int obstacleJ2Index = obstacleJ1->nextIndex;
                     Obstacle* obstacleJ2 = obstaclesPtr + obstacleJ2Index;
 
-                    float j1LeftOfI = RVOMath.LeftOf(obstacleI1->point, obstacleI2->point, obstacleJ1->point);
-                    float j2LeftOfI = RVOMath.LeftOf(obstacleI1->point, obstacleI2->point, obstacleJ2->point);
+                    fp j1LeftOfI = RVOMath.LeftOf(obstacleI1->point, obstacleI2->point, obstacleJ1->point);
+                    fp j2LeftOfI = RVOMath.LeftOf(obstacleI1->point, obstacleI2->point, obstacleJ2->point);
 
                     if (j1LeftOfI >= -RVOMath.RVO_EPSILON && j2LeftOfI >= -RVOMath.RVO_EPSILON)
                     {
@@ -1129,43 +1168,69 @@ namespace RVO
                     {
                         // Split obstacle j.
                         float2 dI2I1 = obstacleI2->point - obstacleI1->point;
-                        float t = RVOMath.Det(dI2I1, obstacleJ1->point - obstacleI1->point)
+                        fp t = RVOMath.Det(dI2I1, obstacleJ1->point - obstacleI1->point)
                             / RVOMath.Det(dI2I1, obstacleJ1->point - obstacleJ2->point);
 
                         float2 splitPoint = obstacleJ1->point + (t * (obstacleJ2->point - obstacleJ1->point));
-
-                        // NewObstacleVert will cause this.obstacles change
-                        // so the old obstaclesPtr value became invalid and we have to assign again.
-                        Obstacle* newObstacle = this.NewObstacleVert(splitPoint, obstacleJ1->obstacle);
-                        obstaclesPtr = (Obstacle*)this.obstacles.GetUnsafePtr();
-
-                        // 往NativeList中添加新元素可能导致NativeList扩容
-                        // NativeList扩容后,指针指向了新地址
-                        // 这时通过原指针计算出的其他指针还指向旧地址
-                        // 需要更新这些指针
-                        obstacleI1 = obstaclesPtr + obstacleI1Index;
-                        obstacleI2 = obstaclesPtr + obstacleI2Index;
-                        obstacleJ1 = obstaclesPtr + obstacleJ1Index;
-                        obstacleJ2 = obstaclesPtr + obstacleJ2Index;
-
-                        int newObstacleIndex = newObstacle->id;
-                        newObstacle->previousIndex = obstacleJ1Index;
-                        newObstacle->nextIndex = obstacleJ2Index;
-                        newObstacle->convex = true;
-                        newObstacle->direction = obstacleJ1->direction;
-
-                        obstacleJ1->nextIndex = newObstacleIndex;
-                        obstacleJ2->previousIndex = newObstacleIndex;
-
-                        if (j1LeftOfI > 0f)
+                        bool closeJ1 = math.distancesq(splitPoint, obstacleJ1->point) < RVOMath.RVO_EPSILON;
+                        bool closeJ2 = math.distancesq(splitPoint, obstacleJ2->point) < RVOMath.RVO_EPSILON;
+                        if (closeJ1)
                         {
-                            leftObstaclesPtr[leftCounter++] = obstacleJ1Index;
-                            rightObstaclesPtr[rightCounter++] = newObstacleIndex;
+                            if (j2LeftOfI > RVOMath.Zero)
+                            {
+                                leftObstaclesPtr[leftCounter++] = obstacleJ1Index;
+                            }
+                            else
+                            {
+                                rightObstaclesPtr[rightCounter++] = obstacleJ1Index;
+                            }
+                        }
+                        else if (closeJ2)
+                        {
+                            if (j1LeftOfI > RVOMath.Zero)
+                            {
+                                leftObstaclesPtr[leftCounter++] = obstacleJ1Index;
+                            }
+                            else
+                            {
+                                rightObstaclesPtr[rightCounter++] = obstacleJ1Index;
+                            }
                         }
                         else
                         {
-                            rightObstaclesPtr[rightCounter++] = obstacleJ1Index;
-                            leftObstaclesPtr[leftCounter++] = newObstacleIndex;
+                            // NewObstacleVert will cause this.obstacles change
+                            // so the old obstaclesPtr value became invalid and we have to assign again.
+                            Obstacle* newObstacle = this.NewObstacleVert(splitPoint, obstacleJ1->obstacle);
+                            obstaclesPtr = (Obstacle*)this.obstacles.GetUnsafePtr();
+
+                            // 往NativeList中添加新元素可能导致NativeList扩容
+                            // NativeList扩容后,指针指向了新地址
+                            // 这时通过原指针计算出的其他指针还指向旧地址
+                            // 需要更新这些指针
+                            obstacleI1 = obstaclesPtr + obstacleI1Index;
+                            obstacleI2 = obstaclesPtr + obstacleI2Index;
+                            obstacleJ1 = obstaclesPtr + obstacleJ1Index;
+                            obstacleJ2 = obstaclesPtr + obstacleJ2Index;
+
+                            int newObstacleIndex = newObstacle->id;
+                            newObstacle->previousIndex = obstacleJ1Index;
+                            newObstacle->nextIndex = obstacleJ2Index;
+                            newObstacle->convex = true;
+                            newObstacle->direction = obstacleJ1->direction;
+
+                            obstacleJ1->nextIndex = newObstacleIndex;
+                            obstacleJ2->previousIndex = newObstacleIndex;
+
+                            if (j1LeftOfI > RVOMath.Zero)
+                            {
+                                leftObstaclesPtr[leftCounter++] = obstacleJ1Index;
+                                rightObstaclesPtr[rightCounter++] = newObstacleIndex;
+                            }
+                            else
+                            {
+                                rightObstaclesPtr[rightCounter++] = obstacleJ1Index;
+                                leftObstaclesPtr[leftCounter++] = newObstacleIndex;
+                            }
                         }
                     }
                 }
@@ -1249,7 +1314,7 @@ namespace RVO
         [BurstCompile]
         private struct ComputeJob : IJobParallelFor
         {
-            private readonly float timeStep;
+            private readonly fp timeStep;
             [WriteOnly]
             private NativeArray<float2> agentResult;
             [ReadOnly]
@@ -1263,7 +1328,7 @@ namespace RVO
                 NativeArray<AgentData>.ReadOnly agents,
                 NativeArray<Obstacle>.ReadOnly obstacles,
                 KdTree.ReadOnly kdTree,
-                float timeStep,
+                fp timeStep,
                 NativeArray<float2> agentResult)
                 : this()
             {
@@ -1285,7 +1350,7 @@ namespace RVO
                 int obstaclesLength = this.obstacles.Length;
                 AgentData* agent = agentsPtr + index;
 
-                agent->ComputeNeighbors(
+                    agent->ComputeNeighbors(
                     in index,
                     in this.kdTree,
                     agentsPtr,
@@ -1312,14 +1377,14 @@ namespace RVO
         [BurstCompile]
         private struct UpdateJob : IJobParallelFor
         {
-            private readonly float timeStep;
+            private readonly fp timeStep;
             [ReadOnly]
             private NativeArray<float2> agentResult;
             private NativeArray<AgentData> agents;
 
             public UpdateJob(
                 NativeArray<AgentData> agents,
-                float timeStep,
+                fp timeStep,
                 NativeArray<float2> agentResult)
                 : this()
             {

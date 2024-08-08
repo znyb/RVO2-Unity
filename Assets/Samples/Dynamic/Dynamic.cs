@@ -8,15 +8,23 @@ namespace RVO
 {
     using System;
     using System.Collections.Generic;
-    using Unity.Mathematics;
     using UnityEngine;
     using UnityEngine.Profiling;
-    using Random = System.Random;
+
+#if RVO_FIXEDPOINT
+    using fp = Deterministic.FixedPoint.fp;
+    using float2 = Deterministic.FixedPoint.fp2;
+    using math = Deterministic.FixedPoint.fixmath;
+    using Random = Deterministic.FixedPoint.Random;
+#else
+    using Unity.Mathematics;
+    using Random = RVO.RandomValue;
+#endif
 
     internal class Dynamic : MonoBehaviour
     {
         // Random number generator.
-        private readonly Random random = new Random(0);
+        private readonly Random random = new Random(123456);
 
         private Simulator simulator;
 
@@ -29,10 +37,10 @@ namespace RVO
         private void SetupScenario()
         {
             // Specify the global time step of the simulation.
-            this.simulator.SetTimeStep(0.25f);
+            this.simulator.SetTimeStep(FPValue.OneIn100 * 25);
 
             // Specify the default parameters for agents that are subsequently added.
-            this.simulator.SetAgentDefaults(15f, 10, 5f, 5f, 2f, 0.5f, new float2(0f, 0f));
+            this.simulator.SetAgentDefaults(15, 10, 5, 5, 2, FPValue.Half, new float2(0, 0));
 
             this.repeatedTasks = new List<RepeatedTask>();
             this.agentData = new Dictionary<Agent, GoalAndColor>();
@@ -42,25 +50,25 @@ namespace RVO
             {
                 for (var j = 0; j < 3; ++j)
                 {
-                    var position = new float2(60f + (i * 10f), 60f + (j * 10f));
-                    var goal = -position;
-                    var color = Color.red;
+                    var position = new float2(60 + (i * 10), 60 + (j * 10));
+                    float2 goal = -position;
+                    Color color = Color.red;
                     var task = new SpawnTask(position, goal, color, this.simulator, this.agentData) { interval = 1000, frameCounter = 0 };
                     this.repeatedTasks.Add(task);
 
-                    position = new float2(-60f - (i * 10f), 60f + (j * 10f));
+                    position = new float2(-60 - (i * 10), 60 + (j * 10));
                     goal = -position;
                     color = Color.green;
                     task = new SpawnTask(position, goal, color, this.simulator, this.agentData) { interval = 1000, frameCounter = 250 };
                     this.repeatedTasks.Add(task);
 
-                    position = new float2(60f + (i * 10f), -60f - (j * 10f));
+                    position = new float2(60 + (i * 10), -60 - (j * 10));
                     goal = -position;
                     color = Color.blue;
                     task = new SpawnTask(position, goal, color, this.simulator, this.agentData) { interval = 1000, frameCounter = 500 };
                     this.repeatedTasks.Add(task);
 
-                    position = new float2(-60f - (i * 10f), -60f - (j * 10f));
+                    position = new float2(-60 - (i * 10), -60 - (j * 10));
                     goal = -position;
                     color = Color.white;
                     task = new SpawnTask(position, goal, color, this.simulator, this.agentData) { interval = 1000, frameCounter = 750 };
@@ -75,44 +83,44 @@ namespace RVO
                 // Add (polygonal) obstacles, specifying their vertices in counterclockwise order.
                 IList<float2> obstacle1 = new List<float2>
                 {
-                    new float2(-35f, 35f),
-                    new float2(-45f, 15f),
-                    new float2(-35f, 15f),
-                    new float2(-15f, 35f),
-                    new float2(-15f, 45f),
+                    new float2(-35, 35),
+                    new float2(-45, 15),
+                    new float2(-35, 15),
+                    new float2(-15, 35),
+                    new float2(-15, 45),
                 };
                 var task = new ObstacleSwitchTask(obstacle1, this.simulator, this.obstacles) { interval = 600, frameCounter = -300 };
                 this.repeatedTasks.Add(task);
 
                 IList<float2> obstacle2 = new List<float2>
                 {
-                    new float2(35f, 35f),
-                    new float2(15f, 45f),
-                    new float2(15f, 35f),
-                    new float2(35f, 15f),
-                    new float2(45f, 15f),
+                    new float2(35, 35),
+                    new float2(15, 45),
+                    new float2(15, 35),
+                    new float2(35, 15),
+                    new float2(45, 15),
                 };
                 task = new ObstacleSwitchTask(obstacle2, this.simulator, this.obstacles) { interval = 600, frameCounter = 0 };
                 this.repeatedTasks.Add(task);
 
                 IList<float2> obstacle3 = new List<float2>
                 {
-                    new float2(35f, -35f),
-                    new float2(45f, -15f),
-                    new float2(35f, -15f),
-                    new float2(15f, -35f),
-                    new float2(15f, -45f),
+                    new float2(35, -35),
+                    new float2(45, -15),
+                    new float2(35, -15),
+                    new float2(15, -35),
+                    new float2(15, -45),
                 };
                 task = new ObstacleSwitchTask(obstacle3, this.simulator, this.obstacles) { interval = 600, frameCounter = 300 };
                 this.repeatedTasks.Add(task);
 
                 IList<float2> obstacle4 = new List<float2>
                 {
-                    new float2(-35f, -35f),
-                    new float2(-15f, -45f),
-                    new float2(-15f, -35f),
-                    new float2(-35f, -15f),
-                    new float2(-45f, -15f),
+                    new float2(-35, -35),
+                    new float2(-15, -45),
+                    new float2(-15, -35),
+                    new float2(-35, -15),
+                    new float2(-45, -15),
                 };
                 task = new ObstacleSwitchTask(obstacle4, this.simulator, this.obstacles) { interval = 600, frameCounter = 600 };
                 this.repeatedTasks.Add(task);
@@ -144,7 +152,7 @@ namespace RVO
                     float2 p0 = this.simulator.GetObstacleVertex(current);
                     float2 p1 = this.simulator.GetObstacleVertex(next);
 
-                    Gizmos.DrawLine((Vector2)p0, (Vector2)p1);
+                    Gizmos.DrawLine(p0.AsVector2(), p1.AsVector2());
 
                     if (next == first)
                     {
@@ -157,12 +165,12 @@ namespace RVO
 
             Color gizmosBackup = Gizmos.color;
 
-            foreach (var pair in this.agentData)
+            foreach (KeyValuePair<Agent, GoalAndColor> pair in this.agentData)
             {
-                var agent = pair.Key;
+                Agent agent = pair.Key;
                 float2 position = agent.position;
                 Gizmos.color = pair.Value.color;
-                Gizmos.DrawSphere((Vector2)position, 2);
+                Gizmos.DrawSphere(position.AsVector2(), 2);
             }
 
             Gizmos.color = gizmosBackup;
@@ -172,25 +180,25 @@ namespace RVO
         {
             // Set the preferred velocity to be a vector of unit magnitude
             // (speed) in the direction of the goal.
-            foreach (var pair in this.agentData)
+            foreach (KeyValuePair<Agent, GoalAndColor> pair in this.agentData)
             {
-                var agent = pair.Key;
-                var goal = pair.Value.goal;
+                Agent agent = pair.Key;
+                float2 goal = pair.Value.goal;
                 float2 goalVector = goal - agent.position;
 
-                if (math.lengthsq(goalVector) > 0.01f)
+                if (math.lengthsq(goalVector) > FPValue.OneIn100)
                 {
                     goalVector = math.normalize(goalVector);
-                    goalVector *= 0.5f;
+                    goalVector *= FPValue.Half;
                 }
 
                 agent.prefVelocity = goalVector;
 
                 // Perturb a little to avoid deadlocks due to perfect symmetry.
-                var angle = (float)this.random.NextDouble() * 2f * (float)Math.PI;
-                var dist = (float)this.random.NextDouble() * 0.0001f;
+                var angle = random.NextDirection2D();
+                var dist = random.NextFp(FPValue.OneIn100);
 
-                    agent.prefVelocity += dist * new float2((float)Math.Cos(angle), (float)Math.Sin(angle));
+                agent.prefVelocity += dist * angle;
             }
         }
 
@@ -210,7 +218,7 @@ namespace RVO
         {
             this.simulator.EnsureCompleted();
 
-            foreach (var task in this.repeatedTasks)
+            foreach (RepeatedTask task in this.repeatedTasks)
             {
                 task.frameCounter++;
                 if (task.frameCounter >= task.interval)
@@ -275,7 +283,7 @@ namespace RVO
             {
                 this.simulator.EnsureCompleted();
 
-                var agentId = this.simulator.AddAgent(this.position);
+                Agent agentId = this.simulator.AddAgent(this.position);
                 this.agentData.Add(agentId, new GoalAndColor(this.goal, this.color));
             }
         }
@@ -296,10 +304,10 @@ namespace RVO
             {
                 this.simulator.EnsureCompleted();
 
-                foreach (var pair in this.agentData)
+                foreach (KeyValuePair<Agent, GoalAndColor> pair in this.agentData)
                 {
-                    var agent = pair.Key;
-                    var goal = pair.Value.goal;
+                    Agent agent = pair.Key;
+                    float2 goal = pair.Value.goal;
                     if (math.lengthsq(agent.position - goal) <= agent.radius * agent.radius)
                     {
                         this.buffer.Add(agent);
@@ -310,7 +318,7 @@ namespace RVO
 
                 this.simulator.EnsureCompleted();
 
-                foreach (var agent in this.buffer)
+                foreach (Agent agent in this.buffer)
                 {
                     this.agentData.Remove(agent);
                 }

@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace Deterministic.FixedPoint {
     [Serializable]
-    [StructLayout(LayoutKind.Explicit, Size = SIZE)]
+    //[StructLayout(LayoutKind.Explicit, Size = SIZE)]
     public struct fp3 : IEquatable<fp3> {
         public const int SIZE = 24;
 
@@ -19,13 +19,13 @@ namespace Deterministic.FixedPoint {
         public static readonly fp3 minus_one = new fp3(fp.minus_one, fp.minus_one, fp.minus_one);
         public static readonly fp3 zero      = new fp3(fp._0,        fp._0,        fp._0);
 
-        [FieldOffset(0)]
+        //[FieldOffset(0)]
         public fp x;
 
-        [FieldOffset(8)]
+        //[FieldOffset(8)]
         public fp y;
 
-        [FieldOffset(16)]
+        //[FieldOffset(16)]
         public fp z;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

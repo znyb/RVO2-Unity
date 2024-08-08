@@ -1,12 +1,12 @@
 using System.Runtime.InteropServices;
 
 namespace Deterministic.FixedPoint {
-    [StructLayout(LayoutKind.Explicit, Size = SIZE)]
+    //[StructLayout(LayoutKind.Explicit, Size = SIZE)]
     // ReSharper disable once InconsistentNaming
     public struct fbool {
         public const int SIZE = 2;
         
-        [FieldOffset(0)]
+        //[FieldOffset(0)]
         public ushort Value;
 
         public static implicit operator bool(fbool b)

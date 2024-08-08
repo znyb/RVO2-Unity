@@ -43,17 +43,40 @@
 namespace RVO
 {
     using Unity.Burst;
+
+#if RVO_FIXEDPOINT
+    using fp = Deterministic.FixedPoint.fp;
+    using float2 = Deterministic.FixedPoint.fp2;
+    using math = Deterministic.FixedPoint.fixmath;
+#else
     using Unity.Mathematics;
+    using fp = System.Single;
+#endif
 
     /// <summary>
     /// Contains functions and constants used in multiple classes.
     /// </summary>
     internal static class RVOMath
     {
+#if RVO_FIXEDPOINT
         /// <summary>
         /// A sufficiently small positive number.
         /// </summary>
-        internal const float RVO_EPSILON = 0.00001f;
+        internal readonly static fp RVO_EPSILON = fp.epsilon;
+        internal readonly static fp Max = fp.max;
+        internal readonly static fp Zero = fp._0;
+        internal readonly static fp One = fp._1;
+        internal readonly static fp Half = fp._0_50;
+#else
+        /// <summary>
+        /// A sufficiently small positive number.
+        /// </summary>
+        internal readonly static fp RVO_EPSILON = 0.00001f; 
+        internal readonly static fp Max = float.MaxValue;
+        internal readonly static fp Zero = 0f;
+        internal readonly static fp One = 1f;
+        internal readonly static fp Half = 0.5f;
+#endif
 
         /// <summary>
         /// Computes the determinant of a two-dimensional square matrix
@@ -63,7 +86,7 @@ namespace RVO
         /// <param name="vector2">The bottom row of the two-dimensional square matrix.</param>
         /// <returns>The determinant of the two-dimensional square matrix.</returns>
         [BurstCompile]
-        internal static float Det(float2 vector1, float2 vector2)
+        internal static fp Det(float2 vector1, float2 vector2)
         {
             return (vector1.x * vector2.y) - (vector1.y * vector2.x);
         }
@@ -77,20 +100,20 @@ namespace RVO
         /// <param name="vector3">The point to which the squared distance is to be calculated.</param>
         /// <returns>The squared distance from the line segment to the point.</returns>
         [BurstCompile]
-        internal static float DistSqPointLineSegment(
+        internal static fp DistSqPointLineSegment(
             float2 vector1,
             float2 vector2,
             float2 vector3)
         {
-            float r = math.dot(vector3 - vector1, vector2 - vector1)
+            fp r = math.dot(vector3 - vector1, vector2 - vector1)
                 / math.lengthsq(vector2 - vector1);
 
-            if (r < 0f)
+            if (r < Zero)
             {
                 return math.lengthsq(vector3 - vector1);
             }
 
-            if (r > 1f)
+            if (r > One)
             {
                 return math.lengthsq(vector3 - vector2);
             }
@@ -107,18 +130,18 @@ namespace RVO
         /// <param name="c">The point to which the signed distance is to be calculated.</param>
         /// <returns>Positive when the point c lies to the left of the line ab.</returns>
         [BurstCompile]
-        internal static float LeftOf(float2 a, float2 b, float2 c)
+        internal static fp LeftOf(float2 a, float2 b, float2 c)
         {
             return Det(a - c, b - a);
         }
 
         /// <summary>
-        /// Computes the square of a float.
+        /// Computes the square of a fp.
         /// </summary>
-        /// <param name="scalar">The float to be squared.</param>
-        /// <returns>The square of the float.</returns>
+        /// <param name="scalar">The fp to be squared.</param>
+        /// <returns>The square of the fp.</returns>
         [BurstCompile]
-        internal static float Square(float scalar)
+        internal static fp Square(fp scalar)
         {
             return scalar * scalar;
         }

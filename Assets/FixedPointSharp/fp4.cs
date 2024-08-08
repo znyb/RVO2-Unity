@@ -3,20 +3,20 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Deterministic.FixedPoint {
-    [StructLayout(LayoutKind.Explicit, Size = SIZE)]
+    //[StructLayout(LayoutKind.Explicit, Size = SIZE)]
     public struct fp4 : IEquatable<fp4> {
         public const int SIZE = 32;
 
-        [FieldOffset(0)]
+        //[FieldOffset(0)]
         public fp x;
 
-        [FieldOffset(8)]
+        //[FieldOffset(8)]
         public fp y;
 
-        [FieldOffset(16)]
+        //[FieldOffset(16)]
         public fp z;
 
-        [FieldOffset(24)]
+        //[FieldOffset(24)]
         public fp w;
 
         public static readonly fp4 zero;

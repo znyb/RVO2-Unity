@@ -1,7 +1,13 @@
 
 namespace RVO
 {
+#if RVO_FIXEDPOINT
+    using fp = Deterministic.FixedPoint.fp;
+    using float2 = Deterministic.FixedPoint.fp2;
+#else
     using Unity.Mathematics;
+    using fp = System.Single;
+#endif
 
     /// <summary>
     /// Defines an agent in the simulation.
@@ -14,12 +20,12 @@ namespace RVO
         public float2 prefVelocity;
         public float2 velocity;
         public int maxNeighbors;
-        public float maxSpeed;
-        public float neighborDist;
-        public float radius;
-        public float timeHorizon;
-        public float timeHorizonObst;
-        public float weight;
+        public fp maxSpeed;
+        public fp neighborDist;
+        public fp radius;
+        public fp timeHorizon;
+        public fp timeHorizonObst;
+        public fp weight;
         public float2 newVelocity;
 
         public Agent()

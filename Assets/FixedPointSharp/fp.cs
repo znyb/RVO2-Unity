@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Deterministic.FixedPoint {
     [Serializable]
-    [StructLayout(LayoutKind.Explicit, Size = SIZE)]
+    //[StructLayout(LayoutKind.Explicit, Size = SIZE)]
     public struct fp : IEquatable<fp>, IComparable<fp> {
         public const int SIZE = 8;
 
@@ -58,7 +58,7 @@ namespace Deterministic.FixedPoint {
         public static readonly fp epsilon     = new fp(1);
         public static readonly fp e           = new fp(178145L);
 
-        [FieldOffset(0)]
+        //[FieldOffset(0)]
         public long value;
 
         public long   AsLong          => value >> fixlut.PRECISION;

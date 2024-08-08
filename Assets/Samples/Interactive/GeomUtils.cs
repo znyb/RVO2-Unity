@@ -7,7 +7,11 @@
 namespace RVO
 {
     using System.Collections.Generic;
+#if RVO_FIXEDPOINT
+    using float2 = Deterministic.FixedPoint.fp2;
+#else
     using Unity.Mathematics;
+#endif
 
     /// <summary>
     /// Provides utility methods for geometric calculations.

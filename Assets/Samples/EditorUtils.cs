@@ -19,9 +19,9 @@ namespace RVO
 #if UNITY_EDITOR
             try
             {
-                var typeofGameView = typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");
+                Type typeofGameView = typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");
                 var gameViewInstance = EditorWindow.GetWindow(typeofGameView);
-                var drawGizmos = typeofGameView.GetProperty(
+                PropertyInfo drawGizmos = typeofGameView.GetProperty(
                     "drawGizmos",
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 drawGizmos.SetValue(gameViewInstance, value);

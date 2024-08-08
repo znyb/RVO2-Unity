@@ -51,8 +51,15 @@ namespace RVO
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using Unity.Mathematics;
     using UnityEngine;
+
+#if RVO_FIXEDPOINT
+    using fp = Deterministic.FixedPoint.fp;
+    using float2 = Deterministic.FixedPoint.fp2;
+    using math = Deterministic.FixedPoint.fixmath;
+#else
+    using Unity.Mathematics;
+#endif
 
     internal class Circle : MonoBehaviour
     {
@@ -75,20 +82,20 @@ namespace RVO
             this.goals = new Dictionary<Agent, float2>();
 
             // Specify the global time step of the simulation.
-            this.simulator.SetTimeStep(0.25f);
+            this.simulator.SetTimeStep(FPValue.OneIn100 * 25);
 
             // Specify the default parameters for agents that are subsequently added.
-            this.simulator.SetAgentDefaults(15f, 10, 10f, 10f, 1.5f, 2f, new float2(0f, 0f));
+            this.simulator.SetAgentDefaults(15, 10, 10, 10, FPValue.OneIn100 * 150, 2, new float2(0, 0));
 
             // Add agents, specifying their start position, and store their
             // goals on the opposite side of the environment.
             for (var i = 0; i < 250; ++i)
             {
-                var agent = this.simulator.AddAgent(200f *
+                Agent agent = this.simulator.AddAgent(200 *
                     new float2(
-                        (float)Math.Cos(i * 2f * Math.PI / 250f),
-                        (float)Math.Sin(i * 2f * Math.PI / 250f)));
-                var goal = -agent.position;
+                        math.cos(i * 2 * FPValue.PI / 250),
+                        math.sin(i * 2 * FPValue.PI / 250)));
+                float2 goal = -agent.position;
                 this.goals.Add(agent, goal);
             }
         }
@@ -102,11 +109,11 @@ namespace RVO
 
             this.simulator.EnsureCompleted();
 
-            foreach (var pair in this.goals)
+            foreach (KeyValuePair<Agent, float2> pair in this.goals)
             {
-                var agent = pair.Key;
+                Agent agent = pair.Key;
                 float2 position = agent.position;
-                Gizmos.DrawSphere((Vector2)position, 1.5f);
+                Gizmos.DrawSphere(position.AsVector2(), 1.5f);
             }
         }
 
@@ -114,13 +121,13 @@ namespace RVO
         {
             // Set the preferred velocity to be a vector of unit magnitude
             // (speed) in the direction of the goal.
-            foreach (var pair in this.goals)
+            foreach (KeyValuePair<Agent, float2> pair in this.goals)
             {
-                var agent = pair.Key;
-                var goal = pair.Value;
+                Agent agent = pair.Key;
+                float2 goal = pair.Value;
                 float2 goalVector = goal - agent.position;
 
-                if (math.lengthsq(goalVector) > 1f)
+                if (math.lengthsq(goalVector) > 1)
                 {
                     goalVector = math.normalize(goalVector);
                 }
@@ -132,10 +139,10 @@ namespace RVO
         private bool ReachedGoal()
         {
             // Check if all agents have reached their goals.
-            foreach (var pair in this.goals)
+            foreach (KeyValuePair<Agent, float2> pair in this.goals)
             {
-                var agent = pair.Key;
-                var goal = pair.Value;
+                Agent agent = pair.Key;
+                float2 goal = pair.Value;
                 if (math.lengthsq(agent.position - goal) > agent.radius * agent.radius)
                 {
                     return false;
